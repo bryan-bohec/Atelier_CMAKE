@@ -1,22 +1,32 @@
 name: Automatisation des tests
 on: push
+
 jobs:
-  Compilation:
+  tests:
+    name: Test ${{ matrix.test }}
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        test: [t1, t2, t3, t4, t5]
     steps:
-      - name: Compilation
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build
         run: |
-          last_directory=$(basename ${{ runner.workspace }})
-          git clone https://github.com/${{ github.repository }}.git
-          cd ./$last_directory
           mkdir build
           cd build
           cmake ..
           make
-          make test
+
+      - name: Run ${{ matrix.test }}
+        run: |
+          cd build
+          ctest -R ${{ matrix.test }} --output-on-failure
 
   deploy:
-    needs: Compilation
+    needs: tests
     runs-on: ubuntu-latest
     steps:
       - name: Deploy
