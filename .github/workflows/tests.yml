@@ -2,13 +2,8 @@ name: Automatisation des tests
 on: push
 
 jobs:
-  tests:
-    name: Test ${{ matrix.test }}
+  Compilation:
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        test: [t1, t2, t3, t4, t5]
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -20,31 +15,29 @@ jobs:
           cmake ..
           make
 
-      - name: Run ${{ matrix.test }}
-        run: |
-          cd build
-          ctest -R ${{ matrix.test }} --output-on-failure
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-output
+          path: build
+          retention-days: 14
 
   Test_Add:
     runs-on: ubuntu-latest
-    needs: tests
+    needs: Compilation
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Build
-        run: |
-          mkdir -p build
-          cd build
-          cmake ..
-          make
+      - name: Download build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: build-output
+          path: build
 
       - name: Run test "add" and capture report
         run: |
           cd build
           set -e
-          echo "== Test add 10 5 ==" > report.txt
-          ./src/calculator add 10 5 | tee -a report.txt
+          echo "== Test add ==" > report.txt
+          ctest -R t1 --output-on-failure | tee -a report.txt
           echo "Exit code: $?" >> report.txt
 
       - name: Upload report as artifact
@@ -54,34 +47,67 @@ jobs:
           path: build/report.txt
           retention-days: 14
 
-      - name: Job summary (facultatif mais pratique)
-        run: |
-          echo "### Résultat du test *add*" >> $GITHUB_STEP_SUMMARY
-          echo '' >> $GITHUB_STEP_SUMMARY
-          echo '' >> $GITHUB_STEP_SUMMARY
-          cat build/report.txt >> $GITHUB_STEP_SUMMARY
-          echo '' >> $GITHUB_STEP_SUMMARY
-
-  Test_Car:
+  Test_sub:
     runs-on: ubuntu-latest
-    needs: tests
+    needs: Compilation
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - name: Download build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: build-output
+          path: build
 
-      - name: Build
+      - name: Run test "sub"
         run: |
-          mkdir -p build
           cd build
-          cmake ..
-          make
+          ctest -R t2 --output-on-failure
+
+  Test_mul:
+    runs-on: ubuntu-latest
+    needs: Compilation
+    steps:
+      - name: Download build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: build-output
+          path: build
+
+      - name: Run test "mul"
+        run: |
+          cd build
+          ctest -R t3 --output-on-failure
+
+  Test_div:
+    runs-on: ubuntu-latest
+    needs: Compilation
+    steps:
+      - name: Download build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: build-output
+          path: build
+
+      - name: Run test "div"
+        run: |
+          cd build
+          ctest -R t4 --output-on-failure
+
+  Test_car:
+    runs-on: ubuntu-latest
+    needs: Compilation
+    steps:
+      - name: Download build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: build-output
+          path: build
 
       - name: Run test "car" and capture report
         run: |
           cd build
           set -e
-          echo "== Test car 5 ==" > report-car.txt
-          ./src/calculator car 5 | tee -a report-car.txt
+          echo "== Test car ==" > report-car.txt
+          ctest -R t5 --output-on-failure | tee -a report-car.txt
           echo "Exit code: $?" >> report-car.txt
 
       - name: Upload report as artifact
@@ -91,17 +117,9 @@ jobs:
           path: build/report-car.txt
           retention-days: 14
 
-      - name: Job summary
-        run: |
-          echo "### Résultat du test *car*" >> $GITHUB_STEP_SUMMARY
-          echo '' >> $GITHUB_STEP_SUMMARY
-          echo '' >> $GITHUB_STEP_SUMMARY
-          cat build/report-car.txt >> $GITHUB_STEP_SUMMARY
-          echo '' >> $GITHUB_STEP_SUMMARY
-
-  deploy:
-    needs: [tests, Test_Add, Test_Car]
+  Deployment:
     runs-on: ubuntu-latest
+    needs: [Test_Add, Test_sub, Test_mul, Test_div, Test_car]
     steps:
       - name: Deploy
         run: echo "Déploiement de la solution"
