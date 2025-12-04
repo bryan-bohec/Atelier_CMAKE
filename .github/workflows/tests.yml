@@ -35,6 +35,7 @@ jobs:
       - name: Run test "add" and capture report
         run: |
           cd build
+          chmod +x src/calculator
           set -e
           echo "== Test add ==" > report.txt
           ctest -R t1 --output-on-failure | tee -a report.txt
@@ -60,6 +61,7 @@ jobs:
       - name: Run test "sub"
         run: |
           cd build
+          chmod +x src/calculator
           ctest -R t2 --output-on-failure
 
   Test_mul:
@@ -75,6 +77,7 @@ jobs:
       - name: Run test "mul"
         run: |
           cd build
+          chmod +x src/calculator
           ctest -R t3 --output-on-failure
 
   Test_div:
@@ -90,6 +93,7 @@ jobs:
       - name: Run test "div"
         run: |
           cd build
+          chmod +x src/calculator
           ctest -R t4 --output-on-failure
 
   Test_car:
@@ -105,6 +109,7 @@ jobs:
       - name: Run test "car" and capture report
         run: |
           cd build
+          chmod +x src/calculator
           set -e
           echo "== Test car ==" > report-car.txt
           ctest -R t5 --output-on-failure | tee -a report-car.txt
